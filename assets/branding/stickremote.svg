@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>StickRemote</title>
+  <rect id="background" width="1024" height="1024" fill="#151921"/>
+  <path id="handset" fill="#FFAE68" d="M482 121H543A175 175 0 0 1 718 296V729A175 175 0 0 1 543 904H482A175 175 0 0 1 307 729V296A175 175 0 0 1 482 121Z"/>
+  <path id="buttons" fill="#252C36" fill-rule="evenodd" d="M646 353.5a133.5 133.5 0 1 0 -267 0a133.5 133.5 0 1 0 267 0Z M573 353.5a60.5 60.5 0 1 1 -121 0a60.5 60.5 0 1 1 121 0Z M429 581h167a29 29 0 0 1 0 58H429a29 29 0 0 1 0 -58Z M458 730a29 29 0 1 0 -58 0a29 29 0 1 0 58 0Z M626 730a29 29 0 1 0 -58 0a29 29 0 1 0 58 0Z"/>
+</svg>
