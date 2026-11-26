@@ -1,10 +1,28 @@
+<img src="assets/branding/stickremote.svg" width="88" height="88" alt="StickRemote logo">
+
 # StickRemote
 
-StickRemote is a Flutter remote for Fire TV on Android and iOS. Open it on the same Wi-Fi as your Fire TV, choose the device, and enter the four digits shown on the TV. StickRemote stores the pairing token in Android Keystore-backed storage or the iOS Keychain. It reconnects when it discovers the last paired device.
+Control your Fire TV over Wi-Fi without an Amazon sign-in.
+
+[Download for Android (ARM64)](https://github.com/bipinkrish/StickRemote/releases/latest/download/app-arm64-v8a-release.apk) · [All APKs](https://github.com/bipinkrish/StickRemote/releases/latest)
+
+Choose ARM64 for most Android phones, `armeabi-v7a` for a 32-bit ARM phone, or `x86_64` for an Intel or AMD emulator. Install one APK on your phone. Version 1.0.0 requires Android 7.0 or later and uses the project's debug signing key.
+
+## Pair your Fire TV
+
+Open StickRemote on the same Wi-Fi as your Fire TV. Choose the device and enter the four digits shown on the TV. StickRemote stores the pairing token in Android Keystore-backed storage or the iOS Keychain. It reconnects when it discovers the last paired device.
 
 The remote includes a directional pad, swipe pad, Back, Home, Menu, playback, keyboard input, push-to-talk, and TV volume, mute and power. Equipment controls depend on the receiver and its TV equipment setup.
 
-## Run
+## Screenshots
+
+| Find a Fire TV | Directional pad |
+| --- | --- |
+| <img src="screenshots/devices.png" width="230" alt="Device list showing a living room Fire TV"> | <img src="screenshots/remote.png" width="230" alt="Directional pad with playback and volume controls"> |
+| **Swipe pad** | **Volume setup** |
+| <img src="screenshots/touchpad.png" width="230" alt="Touchpad for swiping to move and tapping to select"> | <img src="screenshots/audio-setup.png" width="230" alt="Volume setup with separate tests for volume up and mute"> |
+
+## Run from source
 
 Use `flutter pub get`, then `flutter run` on a phone. The package and bundle identifier is `io.github.bipinkrish.stickremote`. Run `flutter test` for the simulated pairing and remote-control checks.
 
