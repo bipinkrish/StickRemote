@@ -173,6 +173,18 @@ void main() {
       final top = tester.getRect(find.bySemanticsLabel('Up')).top;
       final bottom = tester.getRect(find.bySemanticsLabel('Down')).bottom;
       await tester.tap(find.byTooltip('Use touchpad'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final fades = find.descendant(
+        of: find.byType(AnimatedCrossFade),
+        matching: find.byType(FadeTransition),
+      );
+      expect(
+        tester.widgetList<FadeTransition>(fades).map((f) => f.opacity.value),
+        everyElement(allOf(greaterThan(0), lessThan(1))),
+      );
+      expect(fades, findsNWidgets(2));
+      expect(buttons.map(tester.getRect).toList(), rects);
       await tester.pumpAndSettle();
       final touch = tester.getRect(
         find.bySemanticsLabel('Touchpad. Swipe to move or tap to select.'),
@@ -180,7 +192,18 @@ void main() {
       expect(touch.top, closeTo(top, 0.01));
       expect(touch.bottom, closeTo(bottom, 0.01));
       expect(buttons.map(tester.getRect).toList(), rects);
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await tester.pump();
       await tester.tap(find.byTooltip('Use directional pad'));
+      await tester.pump();
+      expect(
+        tester.widgetList<FadeTransition>(fades).map((f) => f.opacity.value),
+        unorderedEquals([0.0, 1.0]),
+      );
       await tester.pumpAndSettle();
       expect(buttons.map(tester.getRect).toList(), rects);
     });

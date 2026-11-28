@@ -348,56 +348,64 @@ class _RemoteFaceState extends State<RemoteFace> with WidgetsBindingObserver {
     );
   }
 
-  Widget _navigation() {
-    if (!_pad) {
-      return Semantics(
-        label: 'Touchpad. Swipe to move or tap to select.',
-        button: true,
-        onTap: () => _tap('select'),
-        child: GestureDetector(
-          onTap: () => _tap('select'),
-          onLongPressStart: (_) => _down('select'),
-          onLongPressEnd: (_) => _up('select'),
-          onLongPressCancel: () => _up('select'),
-          onPanStart: (_) => _drag = Offset.zero,
-          onPanUpdate: (event) {
-            _drag += event.delta;
-            if (_drag.distance < 34) return;
-            final dir = _drag.dx.abs() > _drag.dy.abs()
-                ? (_drag.dx < 0 ? 'left' : 'right')
-                : (_drag.dy < 0 ? 'up' : 'down');
-            _tap('dpad_$dir');
-            _drag = Offset.zero;
-          },
-          child: ClipPath(
-            clipper: const _TouchpadClipper(),
-            child: const ColoredBox(
-              color: padFace,
-              child: Center(
-                child: Text(
-                  'Swipe to move,\ntap to select',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: padArrow,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+  Widget _touchpad() => Semantics(
+    label: 'Touchpad. Swipe to move or tap to select.',
+    button: true,
+    onTap: () => _tap('select'),
+    child: GestureDetector(
+      onTap: () => _tap('select'),
+      onLongPressStart: (_) => _down('select'),
+      onLongPressEnd: (_) => _up('select'),
+      onLongPressCancel: () => _up('select'),
+      onPanStart: (_) => _drag = Offset.zero,
+      onPanUpdate: (event) {
+        _drag += event.delta;
+        if (_drag.distance < 34) return;
+        final dir = _drag.dx.abs() > _drag.dy.abs()
+            ? (_drag.dx < 0 ? 'left' : 'right')
+            : (_drag.dy < 0 ? 'up' : 'down');
+        _tap('dpad_$dir');
+        _drag = Offset.zero;
+      },
+      child: ClipPath(
+        clipper: const _TouchpadClipper(),
+        child: const ColoredBox(
+          color: padFace,
+          child: Center(
+            child: Text(
+              'Swipe to move,\ntap to select',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: padArrow,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
         ),
-      );
-    }
-    return FittedBox(
+      ),
+    ),
+  );
+
+  Widget _navigation() => AnimatedCrossFade(
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 200),
+    firstCurve: Curves.easeInOut,
+    secondCurve: Curves.easeInOut,
+    crossFadeState: _pad ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+    layoutBuilder: (top, topKey, bottom, bottomKey) =>
+        Stack(fit: StackFit.expand, children: [bottom, top]),
+    firstChild: FittedBox(
       child: SizedBox.square(
         dimension: 327,
         child: Stack(
           children: [for (final segment in padSegments) _segment(segment)],
         ),
       ),
-    );
-  }
+    ),
+    secondChild: _touchpad(),
+  );
 
   Widget _segment(PadSegment part) {
     final bounds = part.face.getBounds();
