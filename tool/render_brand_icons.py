@@ -1,4 +1,5 @@
 """Export StickRemote's vector master. Requires librsvg, PyGObject, Cairo and ImageMagick."""
+from copy import deepcopy
 import io
 import json
 import subprocess
@@ -46,7 +47,7 @@ def android_vectors(svg):
         lines = ['<vector xmlns:android="http://schemas.android.com/apk/res/android"',
                  '    android:width="108dp" android:height="108dp"',
                  '    android:viewportWidth="1024" android:viewportHeight="1024">',
-                 '    <group android:pivotX="512" android:pivotY="512" android:scaleX="0.75" android:scaleY="0.75">']
+                 '    <group android:pivotX="512" android:pivotY="512" android:scaleX="0.54" android:scaleY="0.54">']
         for color, path in paths:
             lines.extend([f'        <path android:fillColor="{color}" android:fillType="evenOdd"',
                           f'            android:pathData="{path}" />'])
@@ -59,8 +60,13 @@ def main():
     svg = ET.parse(MASTER).getroot()
     android_vectors(svg)
     full_icon = Rsvg.Handle.new_from_data(MASTER.read_bytes())
+    # Legacy launcher masks can crop the square bitmap as well.
+    legacy = deepcopy(svg)
+    for path in legacy.findall(f"{SVG}path"):
+        path.set("transform", "translate(512 512) scale(0.8) translate(-512 -512)")
+    legacy_icon = Rsvg.Handle.new_from_data(ET.tostring(legacy))
     for density, size in (("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
-        render(full_icon, ANDROID / f"mipmap-{density}/ic_launcher.png", size, size, opaque=True)
+        render(legacy_icon, ANDROID / f"mipmap-{density}/ic_launcher.png", size, size, opaque=True)
     app_icons = IOS / "AppIcon.appiconset"
     for entry in json.loads((app_icons / "Contents.json").read_text())["images"]:
         size = round(float(entry["size"].split("x")[0]) * int(entry["scale"][0]))

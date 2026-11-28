@@ -117,6 +117,7 @@ class _DevicePageState extends State<DevicePage> {
   }
 
   Future<void> _connect(Stick s) async {
+    if (_page == _Page.connecting && _receiver != null) return;
     final id = ++_generation;
     unawaited(_search?.cancel());
     if (!current(id)) return;
@@ -137,8 +138,7 @@ class _DevicePageState extends State<DevicePage> {
         try {
           await tv.check();
           if (!current(id)) return;
-          await _pairings.remember(s, tv.token!);
-          if (current(id)) setState(() => _page = _Page.remote);
+          await _openPairedRemote(tv, id);
           return;
         } on ReceiverError catch (e) {
           if (e.status != 403 && e.status != 401) rethrow;
@@ -158,23 +158,43 @@ class _DevicePageState extends State<DevicePage> {
     }
   }
 
+  Future<void> _openPairedRemote(Receiver tv, int id) async {
+    var saved = true;
+    try {
+      await _pairings.remember(tv.stick, tv.token!);
+    } catch (_) {
+      saved = false;
+    }
+    if (!mounted || _generation != id) return;
+    setState(() => _page = _Page.remote);
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Connected. Could not save this pairing on your phone.',
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _verify() async {
-    if (_verifying || _pin.text.length != 4) return;
+    if (_page != _Page.pin || _verifying || _pin.text.length != 4) return;
     final tv = _receiver!, id = _generation;
     setState(() {
       _verifying = true;
       _message = null;
     });
     try {
-      final token = await tv.verify(_pin.text);
-      if (!current(id)) return;
-      await _pairings.remember(tv.stick, token);
-      if (current(id)) setState(() => _page = _Page.remote);
+      await tv.verify(_pin.text);
+      if (current(id)) await _openPairedRemote(tv, id);
     } catch (e) {
       if (current(id)) {
         setState(() {
-          _pin.clear();
-          _message = e is ReceiverError && [400, 401, 403].contains(e.status)
+          final rejected =
+              e is ReceiverError && [400, 401, 403].contains(e.status);
+          if (rejected) _pin.clear();
+          _message = rejected
               ? 'Check the four digits on your TV and try again.'
               : readableError(e);
         });

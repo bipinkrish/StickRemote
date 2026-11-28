@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stickremote/main.dart';
 import 'package:stickremote/src/discovery.dart';
@@ -78,6 +79,113 @@ void main() {
       expect(find.text('TV brand'), findsNothing);
     });
   }
+  testWidgets(
+    'PIN survives a connection error and a valid PIN opens the remote even when storage and properties fail',
+    (tester) async {
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      int displays = 0, verifies = 0;
+      messenger.setMockMethodCallHandler(bridge, (call) async {
+        if (call.method == 'read') return null;
+        if (call.method == 'write') throw PlatformException(code: 'storage');
+        final path = call.arguments['path'] as String;
+        if (path.endsWith('/pin/display')) {
+          displays++;
+        } else if (path.endsWith('/pin/verify')) {
+          verifies++;
+          final pin = jsonDecode(call.arguments['body'])['pin'];
+          if (pin == '1111') return {'status': 403, 'body': ''};
+          expect(pin, '0123');
+          if (verifies == 2) throw PlatformException(code: 'connection');
+          return {'status': 200, 'body': '{"description":"test-token"}'};
+        } else if (path.endsWith('/properties')) {
+          return {'status': 403, 'body': ''};
+        } else {
+          fail('Unexpected request: $path');
+        }
+        return {'status': 200, 'body': '{}'};
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(bridge, null));
+      await tester.pumpWidget(
+        StickRemoteApp(
+          home: DevicePage(
+            discovery: LocalDiscovery(),
+            receiverFor: AwakeReceiver.new,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Living room'));
+      await tester.pumpAndSettle();
+      final input = find.byType(TextField);
+      await tester.enterText(input, '1111');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(input).controller!.text, isEmpty);
+      await tester.enterText(input, '0123');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(input).controller!.text, '0123');
+      await tester.tap(find.text('Pair remote'));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Select'), findsOneWidget);
+      expect(find.textContaining('Could not save'), findsOneWidget);
+      expect(find.text('Volume setup'), findsOneWidget);
+      expect(displays, 1);
+      expect(verifies, 3);
+    },
+  );
+
+  for (final size in [const Size(360, 640), const Size(412, 915)]) {
+    testWidgets('Controls stay in place in both modes at ${size.width} dp', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.reset);
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        bridge,
+        (_) async => {'status': 200, 'body': '{}'},
+      );
+      addTearDown(() => messenger.setMockMethodCallHandler(bridge, null));
+      await tester.pumpWidget(
+        StickRemoteApp(
+          home: Scaffold(
+            body: RemoteFace(
+              tv: Receiver(tv),
+              pairings: Pairings(),
+              onChoose: () {},
+              onUnauthorized: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final buttons = [
+        for (final name in ['TV power', 'Menu', 'Keyboard', 'Home', 'Back'])
+          find.byTooltip(name),
+        for (final name in ['Voice search', 'Play or pause', 'Volume setup'])
+          find.bySemanticsLabel(name),
+      ];
+      final rects = buttons.map(tester.getRect).toList();
+      final top = tester.getRect(find.bySemanticsLabel('Up')).top;
+      final bottom = tester.getRect(find.bySemanticsLabel('Down')).bottom;
+      await tester.tap(find.byTooltip('Use touchpad'));
+      await tester.pumpAndSettle();
+      final touch = tester.getRect(
+        find.bySemanticsLabel('Touchpad. Swipe to move or tap to select.'),
+      );
+      expect(touch.top, closeTo(top, 0.01));
+      expect(touch.bottom, closeTo(bottom, 0.01));
+      expect(buttons.map(tester.getRect).toList(), rects);
+      await tester.tap(find.byTooltip('Use directional pad'));
+      await tester.pumpAndSettle();
+      expect(buttons.map(tester.getRect).toList(), rects);
+    });
+  }
+
   testWidgets('discover, pair, control volume and reconnect after relaunch', (
     tester,
   ) async {

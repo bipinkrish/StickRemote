@@ -57,10 +57,8 @@ class _RemoteFaceState extends State<RemoteFace> with WidgetsBindingObserver {
         }
         _power = data['powerSupport'] != 'NotSupported';
       }
-    } on ReceiverError catch (error) {
-      if ([401, 403].contains(error.status)) _error(error);
     } on Exception {
-      // An unavailable properties API leaves volume support unknown.
+      // Some paired receivers deny this optional endpoint but accept commands.
     } finally {
       if (mounted) setState(() => _loadingCapabilities = false);
     }
@@ -350,7 +348,7 @@ class _RemoteFaceState extends State<RemoteFace> with WidgetsBindingObserver {
     );
   }
 
-  Widget _navigation(double size) {
+  Widget _navigation() {
     if (!_pad) {
       return Semantics(
         label: 'Touchpad. Swipe to move or tap to select.',
@@ -391,16 +389,11 @@ class _RemoteFaceState extends State<RemoteFace> with WidgetsBindingObserver {
         ),
       );
     }
-    return Center(
+    return FittedBox(
       child: SizedBox.square(
-        dimension: size,
-        child: FittedBox(
-          child: SizedBox.square(
-            dimension: 327,
-            child: Stack(
-              children: [for (final segment in padSegments) _segment(segment)],
-            ),
-          ),
+        dimension: 327,
+        child: Stack(
+          children: [for (final segment in padSegments) _segment(segment)],
         ),
       ),
     );
@@ -565,48 +558,56 @@ class _RemoteFaceState extends State<RemoteFace> with WidgetsBindingObserver {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: SizedBox(
                 height: areaHeight,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _navigation(padSize),
-                    Positioned(
-                      left: 8,
-                      top: _pad ? 32 : 8,
-                      child: _round(
-                        'Keyboard',
-                        Icons.keyboard_outlined,
-                        _keyboard,
-                      ),
+                child: Center(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: math.min(areaHeight, padSize + 32),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Center(
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: padSize,
+                            child: _navigation(),
+                          ),
+                        ),
+                        Positioned(
+                          left: 8,
+                          top: 8,
+                          child: _round(
+                            'Keyboard',
+                            Icons.keyboard_outlined,
+                            _keyboard,
+                          ),
+                        ),
+                        Positioned(right: 8, top: 8, child: _microphone()),
+                        Positioned(
+                          left: 8,
+                          bottom: 8,
+                          child: _round(
+                            'Back',
+                            Icons.arrow_back_rounded,
+                            () => _send((tv) => tv.command('back')),
+                            size: 64,
+                            iconSize: 28,
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: _round(
+                            'Home',
+                            Icons.home_outlined,
+                            _home,
+                            size: 64,
+                            iconSize: 28,
+                            fill: homeOrange,
+                          ),
+                        ),
+                      ],
                     ),
-                    Positioned(
-                      right: 8,
-                      top: _pad ? 32 : 8,
-                      child: _microphone(),
-                    ),
-                    Positioned(
-                      left: 8,
-                      bottom: 8,
-                      child: _round(
-                        'Back',
-                        Icons.arrow_back_rounded,
-                        () => _send((tv) => tv.command('back')),
-                        size: 64,
-                        iconSize: 28,
-                      ),
-                    ),
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: _round(
-                        'Home',
-                        Icons.home_outlined,
-                        _home,
-                        size: 64,
-                        iconSize: 28,
-                        fill: homeOrange,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
