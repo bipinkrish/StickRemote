@@ -4,7 +4,7 @@
 
 Control your Fire TV over Wi-Fi without an Amazon sign-in.
 
-[Download for Android (ARM64)](https://github.com/bipinkrish/StickRemote/releases/latest/download/StickRemote-arm64-v8a.apk) · [All APKs](https://github.com/bipinkrish/StickRemote/releases/latest)
+[Download the latest Android APKs](https://github.com/bipinkrish/StickRemote/releases/latest)
 
 Choose ARM64 for most Android phones, `armeabi-v7a` for a 32-bit ARM phone, or `x86_64` for an Intel or AMD emulator. Install one APK on your phone. This release requires Android 7.0 or later and uses the project's debug signing key.
 
@@ -26,7 +26,7 @@ The remote includes a directional pad, swipe pad, Back, Home, Menu, playback, ke
 
 Use `flutter pub get`, then `flutter run` on a phone. The package and bundle identifier is `io.github.bipinkrish.stickremote`. Run `flutter test` for the simulated pairing and remote-control checks.
 
-Build the split Android APKs with `bash tool/build_apks.sh`. The script writes the release assets to `build/releases/`.
+Build the split Android APKs with `bash tool/build_apks.sh`. The script writes `StickRemote-<version>-<abi>.apk` files to `build/releases/<version>/` using the Android build's version name.
 
 On iOS, open the Runner workspace in Xcode and select your development team. Automatic SSDP discovery on a physical iPhone requires a provisioning profile with the multicast entitlement. The project declares it in `ios/Runner/Runner.entitlements`. Allow the Local Network prompt. If multicast is blocked on the Wi-Fi network, use **Enter TV address**. Find the address in the Fire TV network settings. [Apple’s local-network guidance](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
 
